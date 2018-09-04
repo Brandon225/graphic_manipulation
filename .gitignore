@@ -22,3 +22,6 @@ ecto_schema_dump
 .env
 .DS_Store
 *~
+
+/bitstrings_resized.gif
+/bitstrings_resized.png

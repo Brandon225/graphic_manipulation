@@ -14,7 +14,7 @@ defmodule GraphicManipulations.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :hound]
     ]
   end
 
@@ -22,7 +22,8 @@ defmodule GraphicManipulations.MixProject do
   defp deps do
     [
       {:mogrify, "~> 0.6.1"},
-      {:ex_doc, ">= 0.0.0", only: :dev}
+      {:ex_doc, ">= 0.0.0", only: :dev},
+      {:hound, "~> 1.0"}
     ]
   end
 end

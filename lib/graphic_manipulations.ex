@@ -1,5 +1,6 @@
 defmodule GraphicManipulations do
   import Mogrify
+  use Hound.Helpers
 
   @moduledoc """
   Documentation for GraphicManipulations.
@@ -16,7 +17,7 @@ defmodule GraphicManipulations do
   # 3. Will save to root
 
   ## Examples
-      iex> GraphicManipulations.resize("bitstrings.png", "gif", 200, 113)
+      iex> )GraphicManipulations.resize("bitstrings.png", "gif", 200, 113
       iex> GraphicManipulations.resize("bitstrings_1.png", "gif", 2000, 1000, [in_place: true])
       iex> GraphicManipulations.resize("bitstrings.png", "gif", 200, 113, [path: "bitstrings_resized.gif"])
       %Mogrify.Image{
@@ -51,5 +52,19 @@ defmodule GraphicManipulations do
 
   def resize(_path, format, _width, _height, _opts) do
     {:error, "Supplied format #{format} not supported"}
+  end
+
+  def screenshot(save_to_path) do
+    Hound.start_session()
+    # visit the website which shows the visitor's IP
+    # navigate_to("http://icanhazip.com")
+
+    # display its raw source
+    # IO.inspect(page_source())
+    navigate_to("http://snippets.reimagin8d.com/about/")
+    take_screenshot(save_to_path)
+
+    IO.inspect(label: "take_screenshot called!!!!")
+    # Hound.end_session()
   end
 end

@@ -4,6 +4,10 @@ defmodule GraphicManipulations do
   import FFmpex
   use FFmpex.Options
 
+  @fixture Path.join(__DIR__, "beach.MOV")
+  @output_path Path.join(__DIR__, "beach.mp4")
+  # @output_path Path.join(System.tmp_dir(), "ffmpex-test-fixture.avi")
+
   @moduledoc """
   Documentation for GraphicManipulations.
   """
@@ -56,6 +60,15 @@ defmodule GraphicManipulations do
     {:error, "Supplied format #{format} not supported"}
   end
 
+  @doc """
+    Resize video
+
+    Returns {:ok, "path_to_video"}.
+
+    ## Examples
+        iex> GraphicManipulations.resize_video("beach.mp4", "beach_scaled.mp4", "0", "720")
+
+  """
   def resize_video(input_path, _output_path, _width, _height) when is_nil(input_path) do
     {:error, "input_path is required!"}
   end
@@ -64,18 +77,24 @@ defmodule GraphicManipulations do
     resize_video(input_path, "./", width, height)
   end
 
-  def resize_video(input_path, output_path, width, height) when is_nil(width) do
-    scale = "trunc(oh*a/2)*2:#{height}"
-    resize_video(input_path, output_path, scale)
+  def resize_video(input_path, output_path, width, height) when width === "" do
+    resize_video(input_path, output_path, "0", height)
   end
 
-  def resize_video(input_path, output_path, width, height) when is_nil(height) do
-    scale = "#{width}:trunc(ow/a/2)*2"
-    resize_video(input_path, output_path, scale)
+  def resize_video(input_path, output_path, width, height) when height === "" do
+    resize_video(input_path, output_path, width, "0")
   end
 
-  def resize_video(_input_path, _output_path, _width, _height) do
-    {:error, "width and height must be supplied!"}
+  def resize_video(input_path, output_path, width, height) when width === "0" do
+    resize_video(input_path, output_path, "trunc(oh*a/2)*2:#{height}")
+  end
+
+  def resize_video(input_path, output_path, width, height) when height === "0" do
+    resize_video(input_path, output_path, "#{width}:trunc(ow/a/2)*2")
+  end
+
+  def resize_video(input_path, output_path, width, height) do
+    resize_video(input_path, output_path, "#{width}:#{height}")
   end
 
   def resize_video(input_path, output_path, scale) do
@@ -85,7 +104,27 @@ defmodule GraphicManipulations do
       |> add_input_file(input_path)
       |> add_output_file(output_path)
       |> add_stream_specifier(stream_type: :video)
-      |> add_stream_option(option_aspect(scale))
+      |> add_file_option(option_aspect(scale))
+
+    IO.inspect(prepare(command), label: "command")
+
+    :ok = execute(command)
+  end
+
+  def video() do
+    video(@fixture, @output_path)
+  end
+
+  def video(input_path, output_path) do
+    command =
+      FFmpex.new_command()
+      |> add_global_option(option_y())
+      |> add_input_file(input_path)
+      |> add_output_file(output_path)
+      |> add_stream_specifier(stream_type: :video)
+      |> add_stream_option(option_b("64k"))
+      |> add_file_option(option_maxrate("128k"))
+      |> add_file_option(option_bufsize("64k"))
 
     :ok = execute(command)
   end

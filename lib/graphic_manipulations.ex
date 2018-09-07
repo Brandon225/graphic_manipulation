@@ -1,6 +1,8 @@
 defmodule GraphicManipulations do
   import Mogrify
   use Hound.Helpers
+  import FFmpex
+  use FFmpex.Options
 
   @moduledoc """
   Documentation for GraphicManipulations.
@@ -17,7 +19,7 @@ defmodule GraphicManipulations do
   # 3. Will save to root
 
   ## Examples
-      iex> )GraphicManipulations.resize("bitstrings.png", "gif", 200, 113
+      iex> GraphicManipulations.resize("bitstrings.png", "gif", 200, 113)
       iex> GraphicManipulations.resize("bitstrings_1.png", "gif", 2000, 1000, [in_place: true])
       iex> GraphicManipulations.resize("bitstrings.png", "gif", 200, 113, [path: "bitstrings_resized.gif"])
       %Mogrify.Image{
@@ -54,6 +56,62 @@ defmodule GraphicManipulations do
     {:error, "Supplied format #{format} not supported"}
   end
 
+  def resize_video(input_path, _output_path, _width, _height) when is_nil(input_path) do
+    {:error, "input_path is required!"}
+  end
+
+  def resize_video(input_path, output_path, width, height) when is_nil(output_path) do
+    resize_video(input_path, "./", width, height)
+  end
+
+  def resize_video(input_path, output_path, width, height) when is_nil(width) do
+    scale = "trunc(oh*a/2)*2:#{height}"
+    resize_video(input_path, output_path, scale)
+  end
+
+  def resize_video(input_path, output_path, width, height) when is_nil(height) do
+    scale = "#{width}:trunc(ow/a/2)*2"
+    resize_video(input_path, output_path, scale)
+  end
+
+  def resize_video(_input_path, _output_path, _width, _height) do
+    {:error, "width and height must be supplied!"}
+  end
+
+  def resize_video(input_path, output_path, scale) do
+    command =
+      FFmpex.new_command()
+      |> add_global_option(option_y())
+      |> add_input_file(input_path)
+      |> add_output_file(output_path)
+      |> add_stream_specifier(stream_type: :video)
+      |> add_stream_option(option_aspect(scale))
+
+    :ok = execute(command)
+  end
+
+  def start do
+    IO.puts("starting")
+
+    Hound.Session.make_capabilities(%{
+      browserName: "chrome",
+      chromeOptions: %{
+        "args" => ["--headless", "--disable-gpu"],
+        "binary" => "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+      }
+    })
+
+    Hound.start_session()
+    navigate_to("http://snippets.reimagin8d.com/about/")
+  end
+
+  @doc """
+    Take a screenshot of a webpage
+
+    ## Examples
+        iex> GraphicManipulations.screenshot("screenshot.gif")
+        "./screenshot.gif"
+  """
   def screenshot(save_to_path) do
     Hound.start_session()
     # visit the website which shows the visitor's IP
@@ -63,8 +121,6 @@ defmodule GraphicManipulations do
     # IO.inspect(page_source())
     navigate_to("http://snippets.reimagin8d.com/about/")
     take_screenshot(save_to_path)
-
-    IO.inspect(label: "take_screenshot called!!!!")
-    # Hound.end_session()
+    Hound.end_session()
   end
 end

@@ -14,7 +14,7 @@ defmodule GraphicManipulations.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :hound]
+      extra_applications: [:logger, :hound, :httpoison]
     ]
   end
 
@@ -23,7 +23,10 @@ defmodule GraphicManipulations.MixProject do
     [
       {:mogrify, "~> 0.6.1"},
       {:ex_doc, ">= 0.0.0", only: :dev},
-      {:hound, "~> 1.0"}
+      {:hound, "~> 1.0"},
+      {:httpoison, "~> 0.5"},
+      {:poison, "~> 3.1"},
+      {:ffmpex, "~> 0.5.2"}
     ]
   end
 end

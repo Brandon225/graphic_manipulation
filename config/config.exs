@@ -3,7 +3,7 @@
 use Mix.Config
 
 # Start with selenium driver (default)
-# config :hound, driver: "selenium"
+config :hound, driver: "selenium"
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this

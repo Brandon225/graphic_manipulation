@@ -1,11 +1,9 @@
 defmodule GraphicManipulations do
   import Mogrify
   use Hound.Helpers
-  import FFmpex
-  use FFmpex.Options
 
-  @fixture Path.join(__DIR__, "beach.MOV")
-  @output_path Path.join(__DIR__, "beach.mp4")
+  # @fixture Path.join(__DIR__, "beach.MOV")
+  # @output_path Path.join(__DIR__, "beach.mp4")
   # @output_path Path.join(System.tmp_dir(), "ffmpex-test-fixture.avi")
 
   @moduledoc """
@@ -66,14 +64,30 @@ defmodule GraphicManipulations do
     Returns {:ok, "path_to_video"}.
 
     ## Examples
-        iex> GraphicManipulations.resize_video("beach.mp4", "beach_scaled.mp4", "0", "720")
+
+        iex> GraphicManipulations.resize_video("beach.MOV", "beach_0.mp4", "1280", "720")
+        :ok
+        iex> GraphicManipulations.resize_video("beach.mp4", "beach_1.mp4", "1280", "720")
+        :ok
+        iex> GraphicManipulations.resize_video("beach.mp4", "beach_2.mp4", "0", "720")
+        :ok
+        iex> GraphicManipulations.resize_video("beach.mp4", "beach_3.mp4", "1280", "0")
+        :ok
+        iex> GraphicManipulations.resize_video("beach.mp4", "beach_4.mp4", "", 720)
+        :ok
+        iex> GraphicManipulations.resize_video("beach.mp4", "beach_5.mp4", "1280", "")
+        :ok
+        iex> GraphicManipulations.resize_video("", "beach_6.mp4", "1280", "0")
+        {:error, "input_path is required!"}
+        iex> GraphicManipulations.resize_video("beach.mp4", "beach_7.mp4", "0", "0")
+        {:error, "Must supply either height or width"}
 
   """
-  def resize_video(input_path, _output_path, _width, _height) when is_nil(input_path) do
+  def resize_video(input_path, _output_path, _width, _height) when input_path === "" do
     {:error, "input_path is required!"}
   end
 
-  def resize_video(input_path, output_path, width, height) when is_nil(output_path) do
+  def resize_video(input_path, output_path, width, height) when output_path === "" do
     resize_video(input_path, "./", width, height)
   end
 
@@ -85,52 +99,51 @@ defmodule GraphicManipulations do
     resize_video(input_path, output_path, width, "0")
   end
 
+  def resize_video(_input_path, _output_path, width, height)
+      when width == "0" and height == "0" do
+    {:error, "Must supply either height or width"}
+  end
+
   def resize_video(input_path, output_path, width, height) when width === "0" do
-    resize_video(input_path, output_path, "trunc(oh*a/2)*2:#{height}")
+    resize_video(input_path, output_path, "scale=-2:#{height}")
   end
 
   def resize_video(input_path, output_path, width, height) when height === "0" do
-    resize_video(input_path, output_path, "#{width}:trunc(ow/a/2)*2")
+    resize_video(input_path, output_path, "scale=#{width}:-2")
   end
 
   def resize_video(input_path, output_path, width, height) do
-    resize_video(input_path, output_path, "#{width}:#{height}")
+    cmd = System.cmd("ffmpeg", ["-i", input_path, "-s", "#{width}x#{height}", output_path])
+
+    case cmd do
+      {"", 0} ->
+        :ok
+
+      {"", 1} ->
+        {:error, "Conversion failed!"}
+
+      _ ->
+        {:error, "Unknown error!"}
+    end
   end
 
   def resize_video(input_path, output_path, scale) do
-    command =
-      FFmpex.new_command()
-      |> add_global_option(option_y())
-      |> add_input_file(input_path)
-      |> add_output_file(output_path)
-      |> add_stream_specifier(stream_type: :video)
-      |> add_file_option(option_aspect(scale))
+    cmd = System.cmd("ffmpeg", ["-i", input_path, "-vf", scale, output_path])
 
-    IO.inspect(prepare(command), label: "command")
+    case cmd do
+      {"", 0} ->
+        :ok
 
-    :ok = execute(command)
-  end
+      {"", 1} ->
+        {:error, "Conversion failed!"}
 
-  def video() do
-    video(@fixture, @output_path)
-  end
-
-  def video(input_path, output_path) do
-    command =
-      FFmpex.new_command()
-      |> add_global_option(option_y())
-      |> add_input_file(input_path)
-      |> add_output_file(output_path)
-      |> add_stream_specifier(stream_type: :video)
-      |> add_stream_option(option_b("64k"))
-      |> add_file_option(option_maxrate("128k"))
-      |> add_file_option(option_bufsize("64k"))
-
-    :ok = execute(command)
+      _ ->
+        {:error, "Unknown error!"}
+    end
   end
 
   def start do
-    IO.puts("starting")
+    # IO.puts("starting")
 
     Hound.Session.make_capabilities(%{
       browserName: "chrome",
@@ -148,8 +161,8 @@ defmodule GraphicManipulations do
     Take a screenshot of a webpage
 
     ## Examples
-        iex> GraphicManipulations.screenshot("screenshot.gif")
-        "./screenshot.gif"
+        #iex> GraphicManipulations.screenshot("screenshot.gif")
+        #"./screenshot.gif"
   """
   def screenshot(save_to_path) do
     Hound.start_session()

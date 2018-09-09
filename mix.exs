@@ -25,8 +25,7 @@ defmodule GraphicManipulations.MixProject do
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:hound, "~> 1.0"},
       {:httpoison, "~> 0.5"},
-      {:poison, "~> 3.1"},
-      {:ffmpex, "~> 0.5.2"}
+      {:poison, "~> 3.1"}
     ]
   end
 end

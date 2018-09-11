@@ -24,7 +24,7 @@ defmodule GraphicManipulations.MixProject do
       {:mogrify, "~> 0.6.1"},
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:hound, "~> 1.0"},
-      {:httpoison, "~> 0.5"},
+      {:httpoison, "~> 1.0"},
       {:poison, "~> 3.1"}
     ]
   end

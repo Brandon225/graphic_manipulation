@@ -2,8 +2,11 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+# Start with phantomj
+config :hound, driver: "phantomjs"
+
 # Start with selenium driver (default)
-config :hound, driver: "selenium"
+# config :hound, driver: "selenium"
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this

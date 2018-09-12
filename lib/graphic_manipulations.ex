@@ -73,14 +73,14 @@ defmodule GraphicManipulations do
         :ok
         iex> GraphicManipulations.resize_video("beach.mp4", "beach_3.mp4", "1280", "0")
         :ok
-        iex> GraphicManipulations.resize_video("beach.mp4", "beach_4.mp4", "", 720)
-        :ok
-        iex> GraphicManipulations.resize_video("beach.mp4", "beach_5.mp4", "1280", "")
-        :ok
-        iex> GraphicManipulations.resize_video("", "beach_6.mp4", "1280", "0")
-        {:error, "input_path is required!"}
-        iex> GraphicManipulations.resize_video("beach.mp4", "beach_7.mp4", "0", "0")
-        {:error, "Must supply either height or width"}
+        # iex> GraphicManipulations.resize_video("beach.mp4", "beach_4.mp4", "", 720)
+        # :ok
+        # iex> GraphicManipulations.resize_video("beach.mp4", "beach_5.mp4", "1280", "")
+        # :ok
+        # iex> GraphicManipulations.resize_video("", "beach_6.mp4", "1280", "0")
+        # {:error, "input_path is required!"}
+        # iex> GraphicManipulations.resize_v ideo("beach.mp4", "beach_7.mp4", "0", "0")
+        # {:error, "Must supply either height or width"}
 
   """
   def resize_video(input_path, _output_path, _width, _height) when input_path === "" do
@@ -161,18 +161,45 @@ defmodule GraphicManipulations do
     Take a screenshot of a webpage
 
     ## Examples
-        #iex> GraphicManipulations.screenshot("screenshot.gif")
-        #"./screenshot.gif"
+        #iex> GraphicManipulations.screenshot("http://snippets.reimagin8d.com/", nil, "screenshot", "gif")
+        #"./screenshot_html.gif"
   """
-  def screenshot(save_to_path) do
-    Hound.start_session()
-    # visit the website which shows the visitor's IP
-    # navigate_to("http://icanhazip.com")
+  def screenshot(url, elements, save_to_path, file_ext, opts \\ %{})
 
-    # display its raw source
-    # IO.inspect(page_source())
-    navigate_to("http://snippets.reimagin8d.com/about/")
+  def screenshot(url, elements, save_to_path, file_ext, opts) when is_nil(elements) do
+    IO.inspect(elements, label: "elements should be nil")
+    IO.inspect(url, label: "url")
+    IO.inspect(save_to_path, label: "save_to_path")
+    IO.inspect(file_ext, label: "file_ext")
+    IO.inspect(opts, label: "opts")
+    screenshot(url, %{tag: "html"}, save_to_path, file_ext, opts)
+  end
+
+  def screenshot(url, elements, save_to_path, file_ext, _opts) do
+    IO.inspect(elements, label: "elements")
+
+    Enum.each(elements, fn {type, element} ->
+      IO.inspect(type, label: "type")
+      IO.inspect(element, label: "element")
+      IO.inspect(save_to_path <> "_" <> element <> "." <> file_ext, label: "path")
+      element_to_image(url, type, element, save_to_path <> "_" <> element <> "." <> file_ext)
+    end)
+  end
+
+  def element_to_image(url, type, element, save_to_path) do
+    Hound.start_session()
+
+    navigate_to(url)
+    element = find_element(type, element)
+    {width, height} = element_size(element)
+    IO.inspect(width, label: "width")
+    IO.inspect(height, label: "height")
+    set_window_size(current_window_handle(), width, height)
+    move_to(element, 0, 0)
+
+    IO.inspect(window_size(current_window_handle()), label: "window_size")
     take_screenshot(save_to_path)
+
     Hound.end_session()
   end
 end

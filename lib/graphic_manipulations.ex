@@ -21,9 +21,9 @@ defmodule GraphicManipulations do
   # 3. Will save to root
 
   ## Examples
-      iex> GraphicManipulations.resize("bitstrings.png", "gif", 200, 113)
-      iex> GraphicManipulations.resize("bitstrings_1.png", "gif", 2000, 1000, [in_place: true])
-      iex> GraphicManipulations.resize("bitstrings.png", "gif", 200, 113, [path: "bitstrings_resized.gif"])
+      iex> GraphicManipulations.resize("media/bitstrings.png", "gif", 200, 113)
+      iex> GraphicManipulations.resize("media/bitstrings_1.png", "gif", 2000, 1000, [in_place: true])
+      iex> GraphicManipulations.resize("media/bitstrings.png", "gif", 200, 113, [path: "bitstrings_resized.gif"])
       %Mogrify.Image{
         animated: false,
         dirty: %{},
@@ -35,7 +35,7 @@ defmodule GraphicManipulations do
         path: "bitstrings_resized.gif",
         width: nil
       }
-      iex> GraphicManipulations.resize("bitstrings.png", "gifx", 200, 113, [path: "bitstrings_resized.gifx"])
+      iex> GraphicManipulations.resize("media/bitstrings.png", "gifx", 200, 113, [path: "bitstrings_resized.gifx"])
       {:error, "Supplied format gifx not supported"}
 
   """
@@ -58,6 +58,26 @@ defmodule GraphicManipulations do
     {:error, "Supplied format #{format} not supported"}
   end
 
+  def crop(path, %{top: top, left: left, width: width, height: height}) do
+    IO.inspect(width, label: "width")
+    IO.inspect(height, label: "height")
+    # -crop 40x30+10+10  +repage  repage.gif
+    # max_x = left + width
+    # max_y = top + height
+    command = [
+      path,
+      "-gravity",
+      "NorthWest",
+      "-crop",
+      "#{width}x#{height}+#{left}+#{top}",
+      "+repage",
+      path
+    ]
+
+    IO.inspect(command, label: "command")
+    System.cmd("magick", command)
+  end
+
   @doc """
     Resize video
 
@@ -65,21 +85,21 @@ defmodule GraphicManipulations do
 
     ## Examples
 
-        iex> GraphicManipulations.resize_video("beach.MOV", "beach_0.mp4", "1280", "720")
+        iex> GraphicManipulations.resize_video("media/beach.MOV", "media/beach_0.mp4", "1280", "720")
         :ok
-        iex> GraphicManipulations.resize_video("beach.mp4", "beach_1.mp4", "1280", "720")
+        iex> GraphicManipulations.resize_video("media/beach.mp4", "media/beach_1.mp4", "1280", "720")
         :ok
-        iex> GraphicManipulations.resize_video("beach.mp4", "beach_2.mp4", "0", "720")
+        iex> GraphicManipulations.resize_video("media/beach.mp4", "media/beach_2.mp4", "0", "720")
         :ok
-        iex> GraphicManipulations.resize_video("beach.mp4", "beach_3.mp4", "1280", "0")
+        iex> GraphicManipulations.resize_video("media/beach.mp4", "media/beach_3.mp4", "1280", "0")
         :ok
-        # iex> GraphicManipulations.resize_video("beach.mp4", "beach_4.mp4", "", 720)
+        # iex> GraphicManipulations.resize_video("media/beach.mp4", "media/beach_4.mp4", "", 720)
         # :ok
-        # iex> GraphicManipulations.resize_video("beach.mp4", "beach_5.mp4", "1280", "")
+        # iex> GraphicManipulations.resize_video("media/beach.mp4", "media/beach_5.mp4", "1280", "")
         # :ok
-        # iex> GraphicManipulations.resize_video("", "beach_6.mp4", "1280", "0")
+        # iex> GraphicManipulations.resize_video("", "media/beach_6.mp4", "1280", "0")
         # {:error, "input_path is required!"}
-        # iex> GraphicManipulations.resize_v ideo("beach.mp4", "beach_7.mp4", "0", "0")
+        # iex> GraphicManipulations.resize_v ideo("media/beach.mp4", "media/beach_7.mp4", "0", "0")
         # {:error, "Must supply either height or width"}
 
   """
@@ -161,8 +181,10 @@ defmodule GraphicManipulations do
     Take a screenshot of a webpage
 
     ## Examples
-        #iex> GraphicManipulations.screenshot("http://snippets.reimagin8d.com/", nil, "screenshot", "gif")
-        #"./screenshot_html.gif"
+        iex> GraphicManipulations.screenshot("http://snippets.reimagin8d.com/", nil, "media/screenshot", "gif")
+        "./media/screenshot_html.gif"
+        iex> GraphicManipulations.screenshot("http://snippets.reimagin8d.com/details/", %{id: "atom"}, "media/screenshot", "gif")
+        "./media/screenshot_atom.gif"
   """
   def screenshot(url, elements, save_to_path, file_ext, opts \\ %{})
 
@@ -189,16 +211,27 @@ defmodule GraphicManipulations do
   def element_to_image(url, type, element, save_to_path) do
     Hound.start_session()
 
+    current_window_handle() |> maximize_window
+
     navigate_to(url)
     element = find_element(type, element)
     {width, height} = element_size(element)
+
     IO.inspect(width, label: "width")
     IO.inspect(height, label: "height")
-    set_window_size(current_window_handle(), width, height)
-    move_to(element, 0, 0)
+
+    {left, top} = element_location(element)
+
+    IO.inspect(top, label: "top")
+    IO.inspect(left, label: "left")
+
+    # set_window_size(current_window_handle(), width, height)
+    move_to(element, top, left)
 
     IO.inspect(window_size(current_window_handle()), label: "window_size")
     take_screenshot(save_to_path)
+
+    crop(save_to_path, %{top: top, left: left, width: width, height: height})
 
     Hound.end_session()
   end

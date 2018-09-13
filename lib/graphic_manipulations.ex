@@ -58,9 +58,44 @@ defmodule GraphicManipulations do
     {:error, "Supplied format #{format} not supported"}
   end
 
+  # def animated_image(save_to_path) do
+  #   # convert -loop 0 -delay 100 in1.png in2.png out.gif
+  #   command = [
+  #     path,
+  #     "-loop",
+  #     "0",
+  #     "-delay",
+  #     "100",
+  #     "img.png",
+  #     "img2.png",
+  #     "img3.png",
+  #     "img.gif",
+  #     save_to_path
+  #   ]
+
+  #   IO.inspect(command, label: "command")
+  #   System.cmd("convert", command)
+  # end
+
+  def animated_image(images, save_to_path) do
+    # convert -loop 0 -delay 100 in1.png in2.png out.gif
+
+    command =
+      Enum.concat(images, [
+        "-loop",
+        "0",
+        "-delay",
+        "100",
+        save_to_path
+      ])
+
+    IO.inspect(command, label: "command")
+    System.cmd("convert", command)
+  end
+
   def crop(path, %{top: top, left: left, width: width, height: height}) do
-    IO.inspect(width, label: "width")
-    IO.inspect(height, label: "height")
+    # IO.inspect(width, label: "width")
+    # IO.inspect(height, label: "height")
     # -crop 40x30+10+10  +repage  repage.gif
     # max_x = left + width
     # max_y = top + height
@@ -197,18 +232,20 @@ defmodule GraphicManipulations do
     screenshot(url, %{tag: "html"}, save_to_path, file_ext, opts)
   end
 
-  def screenshot(url, elements, save_to_path, file_ext, _opts) do
+  def screenshot(url, elements, save_to_path, file_ext, opts) do
     IO.inspect(elements, label: "elements")
+
+    name = Map.get(:name, opts)
 
     Enum.each(elements, fn {type, element} ->
       IO.inspect(type, label: "type")
       IO.inspect(element, label: "element")
       IO.inspect(save_to_path <> "_" <> element <> "." <> file_ext, label: "path")
-      element_to_image(url, type, element, save_to_path <> "_" <> element <> "." <> file_ext)
+      element_to_image(url, type, element, save_to_path, element <> "." <> file_ext)
     end)
   end
 
-  def element_to_image(url, type, element, save_to_path) do
+  def element_to_image(url, type, element, save_to_path, name) do
     Hound.start_session()
 
     current_window_handle() |> maximize_window
@@ -217,22 +254,63 @@ defmodule GraphicManipulations do
     element = find_element(type, element)
     {width, height} = element_size(element)
 
-    IO.inspect(width, label: "width")
-    IO.inspect(height, label: "height")
+    # IO.inspect(width, label: "width")
+    # IO.inspect(height, label: "height")
 
     {left, top} = element_location(element)
 
-    IO.inspect(top, label: "top")
-    IO.inspect(left, label: "left")
+    # IO.inspect(top, label: "top")
+    # IO.inspect(left, label: "left")
 
     # set_window_size(current_window_handle(), width, height)
     move_to(element, top, left)
 
-    IO.inspect(window_size(current_window_handle()), label: "window_size")
-    take_screenshot(save_to_path)
+    IO.inspect(save_to_path <> name, label: "save image to path with name")
+    take_screenshot(save_to_path <> name)
 
     crop(save_to_path, %{top: top, left: left, width: width, height: height})
 
     Hound.end_session()
+  end
+
+  @doc """
+  Create gif images
+
+  Returns {:ok, "save_to_path"}.
+
+  ## Examples
+
+      iex> GraphicManipulations.element_to_gif("https://portal.eltoro.com/", "tag", "body", "./media/", 4, 10, 0)
+      {:ok, "./media/body.gif"}
+
+  """
+  def element_to_gif(url, type, element, save_to_path, frames, delay, index) do
+    index = index + 1
+
+    case index <= frames do
+      true ->
+        # name =
+        element_to_image(url, type, element, save_to_path, "#{element}#{index}.png")
+        start_gif_timer(url, type, element, save_to_path, frames, delay, index)
+
+      false ->
+        nil
+
+        # TODO:  Call method to create gif
+        # def animated_image(path, save_to_path, map) do
+        images = Enum.into(1..frames, [], fn x -> "./#{save_to_path}#{element}#{x}.png" end)
+
+        animated_image(images, "./" <> save_to_path <> element <> ".gif")
+        # string = Enum.map_every(1..frames, fn x -> nil end)
+        {:ok, "gif is ready " <> save_to_path}
+    end
+  end
+
+  def start_gif_timer(url, type, element, save_to_path, frames, delay, index) do
+    Process.send_after(
+      element_to_gif(url, type, element, save_to_path, frames, delay, index),
+      :work,
+      delay
+    )
   end
 end

@@ -77,7 +77,8 @@ defmodule GraphicManipulations do
   #   System.cmd("convert", command)
   # end
 
-  def animated_image(images, save_to_path) do
+  def animated_image(images, save_to_path, delay) do
+    IO.inspect(images, label: "animated_image")
     # convert -loop 0 -delay 100 in1.png in2.png out.gif
 
     command =
@@ -85,7 +86,7 @@ defmodule GraphicManipulations do
         "-loop",
         "0",
         "-delay",
-        "100",
+        delay,
         save_to_path
       ])
 
@@ -280,37 +281,68 @@ defmodule GraphicManipulations do
 
   ## Examples
 
-      iex> GraphicManipulations.element_to_gif("https://portal.eltoro.com/", "tag", "body", "./media/", 4, 10, 0)
+      iex> GraphicManipulations.element_to_gif("https://portal.eltoro.com/", :tag, "body", "./media/", 4, 10, 0)
       {:ok, "./media/body.gif"}
 
   """
   def element_to_gif(url, type, element, save_to_path, frames, delay, index) do
     index = index + 1
 
+    IO.inspect(index, label: "element_to_gif index")
+
     case index <= frames do
       true ->
-        # name =
         element_to_image(url, type, element, save_to_path, "#{element}#{index}.png")
         start_gif_timer(url, type, element, save_to_path, frames, delay, index)
 
-      false ->
-        nil
+      # parent = self()
 
+      # Task.start_link(fn ->
+      # element_to_gif(url, type, element, save_to_path, frames, delay, index)
+      #   # start_gif_timer(url, type, element, save_to_path, frames, delay, index)
+      #   send(parent, :work_is_done)
+      # end)
+
+      # receive do
+      #   :work_is_done -> :ok
+      # after
+      #   # Optional timeout
+      #   30_000 -> :timeout
+      # end
+
+      false ->
         # TODO:  Call method to create gif
         # def animated_image(path, save_to_path, map) do
         images = Enum.into(1..frames, [], fn x -> "./#{save_to_path}#{element}#{x}.png" end)
 
-        animated_image(images, "./" <> save_to_path <> element <> ".gif")
+        animated_image(images, "./" <> save_to_path <> element <> ".gif", delay)
         # string = Enum.map_every(1..frames, fn x -> nil end)
         {:ok, "gif is ready " <> save_to_path}
     end
   end
 
+  # def element_to_gif() do
+  #   GraphicManipulations.GifCreator.start_link()
+  #   GraphicManipulations.GifCreator.handle_info()
+  # end
+
   def start_gif_timer(url, type, element, save_to_path, frames, delay, index) do
-    Process.send_after(
-      element_to_gif(url, type, element, save_to_path, frames, delay, index),
-      :work,
-      delay
-    )
+    # timer =
+    #   Process.send_after(
+    # element_to_gif(url, type, element, save_to_path, frames, delay, index),
+    #     :work,
+    #     delay
+    #   )
+    :timer.sleep(delay)
+    element_to_gif(url, type, element, save_to_path, frames, Integer.to_string(delay), index)
+    # case index <= frames do
+    #   true ->
+    #     :timer.sleep(delay)
+    #     element_to_gif(url, type, element, save_to_path, frames, delay, index)
+
+    #   false ->
+    #     :ok
+    #     # Process.cancel_timer(timer)
+    # end
   end
 end

@@ -315,7 +315,12 @@ defmodule GraphicManipulations do
         # def animated_image(path, save_to_path, map) do
         images = Enum.into(1..frames, [], fn x -> "./#{save_to_path}#{element}#{x}.png" end)
 
-        animated_image(images, "./" <> save_to_path <> element <> ".gif", delay)
+        animated_image(
+          images,
+          "./" <> save_to_path <> element <> ".gif",
+          Integer.to_string(delay)
+        )
+
         # string = Enum.map_every(1..frames, fn x -> nil end)
         {:ok, "gif is ready " <> save_to_path}
     end
@@ -334,7 +339,7 @@ defmodule GraphicManipulations do
     #     delay
     #   )
     :timer.sleep(delay)
-    element_to_gif(url, type, element, save_to_path, frames, Integer.to_string(delay), index)
+    element_to_gif(url, type, element, save_to_path, frames, delay, index)
     # case index <= frames do
     #   true ->
     #     :timer.sleep(delay)
